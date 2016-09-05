@@ -1,0 +1,26 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`bluebridge-document`
+Fetches an array of documents from the BlueBridge instance, receives update, add & remove events
+
+-->
+
+<dom-module id="bluebridge-query">
+  <template>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'bluebridge-query',
+
+      properties: {
+        collection: String,
+        filter: Object,
+        data: Array
+      },
+
+    });
+  </script>
+</dom-module>
