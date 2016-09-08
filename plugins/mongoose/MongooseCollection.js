@@ -18,7 +18,14 @@ class MongooseCollection extends Collection {
     let self = this.self;
     let Model = this.Model;
 
-    return Model.find(qry);
+    return Model.find(qry).exec()
+      .then(documents => {
+        // let ids = [];
+        // for (let document of documents) {
+        //   ids.push(document._id);
+        // }
+        return Promise.resolve(documents);
+      });
   }
 
   document (socket, id) {
