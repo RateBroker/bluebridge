@@ -33,7 +33,7 @@ class BlueBridge {
 
   exposePlugins () {
     this.plugins.forEach(plugin => {
-      this.expose(plugin.expose());
+      this.expose(plugin._expose());
     });
   }
 

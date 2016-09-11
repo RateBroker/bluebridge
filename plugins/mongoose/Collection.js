@@ -114,13 +114,15 @@ class Collection {
   }
 
   expose () {
-    return {
+    let exposeObj = { };
+    exposeObj[this.collectionName] = {
       'query':        this.curryFunction(this.query),
       'newDocument':  this.curryFunction(this.newDocument),
       'document':     this.curryFunction(this.document),
       'save':         this.curryFunction(this.save),
       'validate':     this.curryFunction(this.validate),
     };
+    return exposeObj;
   }
 
   curryFunction (fn) {
