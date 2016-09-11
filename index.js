@@ -1,5 +1,7 @@
 'use strict';
 
-const bluebridge = require('./BlueBridge');
+const BlueBridge = require('./src/bluebridge');
 
-module.exports = bluebridge;
+module.exports = function (firebase) {
+  return new BlueBridge(firebase);
+};

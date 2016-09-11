@@ -2,26 +2,39 @@
 
 const RPC = require('socket.io-rpc');
 const express = require('express');
+const http = require('http');
+
+const PORT = parseInt(process.env.BLUEBRIDGE_PORT, 10);
+if (!PORT) {
+  throw new Error('process.env.BLUEBRIDGE_PORT not set');
+}
 
 class BlueBridge {
 
-  constructor () {
-    this.sockets        = [];
-    this.models         = {};
+  constructor (firebase) {
+    this.firebase = firebase;
+    this.plugins  = [];
+    this.sockets  = [];
 
-    this.options = {
-      // TODO: bluebridge-auth
-      test: function (handshake, callback) {
-        if (handshake.passw == '123') {
-          callback(true);
-        } else {
-          callback(false);
-        }
-      }
-    };
+    this.app    = express();
+    this.server = http.createServer(this.app);
+    this.rpc    = new RPC(this.server, {
+      serveClient: false,
+      path: '/socket.io'
+    });
+    this.io = this.rpc.io;
 
-    let port = parseInt(process.env.BLUEBRIDGE_PORT, 10);
-    this.rpc = new RPC(port);
+    this.io.use(this.handshake.bind(this));
+  }
+
+  registerPlugin (plugin) {
+    this.plugins.push(plugin);
+  }
+
+  exposePlugins () {
+    this.plugins.forEach(plugin => {
+      this.expose(plugin.expose());
+    });
   }
 
   /**
@@ -33,16 +46,29 @@ class BlueBridge {
     this.rpc.expose(tree);
   }
 
+  handshake (socket, next) {
+    var handshakeData = socket.request;
+
+    console.log(handshakeData);
+
+    // if (!valid) {
+    //   next(new Error('not authorized'));
+    // } else {
+      next();
+    // }
+  }
+
   /**
    * listen - Registers BlueBridge events with the RPC server and begins listening
    *
    * @param  {Function} callback on listening callback function
    */
   listen (callback) {
-    this.rpc.io.on('connection', this.onConnect.bind(this));
-    this.rpc.io.on('disconnected', this.onDisconnect.bind(this));
+    this.io.on('connection', this.onConnect.bind(this));
 
-    this.rpc.server.listen(callback);
+    this.exposePlugins();
+
+    this.server.listen(PORT, callback);
   }
 
   destroy (callback) {
@@ -79,7 +105,6 @@ class BlueBridge {
     this.sockets.splice(index, 1);
   }
 
-
   /**
    * onConnect - BlueBridges' onConnect handler
    *
@@ -88,12 +113,23 @@ class BlueBridge {
   onConnect (socket) {
     console.log('Socket Connected');
     this.addSocket(socket);
-    socket.on('disconnect', () => {
+
+    this.initSocket(socket);
+
+    socket.once('disconnect', () => {
       console.log('Socket Disconnected');
       this.onDisconnect(socket);
     });
   }
 
+  /**
+   *
+   *
+   * @param {Socket} socket The socket to initialize
+   */
+  initSocket (socket) {
+
+  }
 
   /**
    * onDisconnect - BlueBridges' onDisconnect handler
@@ -105,6 +141,4 @@ class BlueBridge {
   }
 }
 
-let bluebridge = new BlueBridge();
-
-module.exports = bluebridge;
+module.exports = BlueBridge;

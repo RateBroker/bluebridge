@@ -1,13 +1,15 @@
 'use strict';
 
-const mongoose            = require('mongoose');
-const MongooseCollection  = require('./MongooseCollection');
-const Plugin              = require('../../Plugin');
+const mongoose    = require('mongoose');
+const Collection  = require('./Collection');
+const Plugin      = require('../../src/Plugin');
 
 class MongoosePlugin extends Plugin {
 
-  constructor () {
-    super();
+  constructor (bluebridge) {
+    super(bluebridge);
+
+    this.collections = [];
 
     // Apply our BlueBridge mongoose plugin to mongoose globally
     // mongoose.plugin(this.plugin.bind(this));
@@ -31,24 +33,33 @@ class MongoosePlugin extends Plugin {
 
 
   /**
-   * loadModels - Takes an object map of Mongoose Models and loads them into bluebridge as collections
+   * loadCollections - Takes an object map of Mongoose Collections and loads them into bluebridge as collections
    *
-   * @param  {type} models description
-   * @return {type}        description
+   * @param  {type} collections description
    */
-  loadModels (models) {
-    for (let modelName in models) {
-      this.loadModel(modelName, models[modelName]);
+  loadCollections (collections) {
+    for (let collectionName in collections) {
+      this.loadCollection(collectionName, collections[collectionName]);
     }
   }
 
-  loadModel (modelName, Model) {
-    // First create a MongooseCollection from the Model
-    let collection = new MongooseCollection(modelName, Model);
+  loadCollection (collectionName, collection) {
+    // First create a Collection from the Collection
+    collection = new Collection(collectionName, collection);
     // Then add it to the plugin
-    this.addCollection(collection);
+    this.collections.push(collection);
+  }
+
+  expose () {
+    let exposeObj = {};
+
+    this.collections.forEach(collection => {
+      Object.assign(exposeObj, collection.expose());
+    })
+
+    console.log(exposeObj);
+    return exposeObj;
   }
 }
 
-let mongoosePlugin = new MongoosePlugin();
-module.exports = mongoosePlugin;
+module.exports = MongoosePlugin;

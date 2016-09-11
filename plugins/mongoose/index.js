@@ -2,4 +2,6 @@
 
 const MongoosePlugin = require('./MongoosePlugin');
 
-module.exports = MongoosePlugin;
+module.exports = function (bluebridge) {
+  return new MongoosePlugin(bluebridge);
+};
