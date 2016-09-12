@@ -43,8 +43,9 @@ class Collection {
   newDocument (socket) {
     let Model = this.model;
     let doc = new Model({});
-    let model = new Document(doc.toObject());
-    return model.read(socket, this.rules);
+    return doc.toObject();
+    // let model = new Document(doc.toObject());
+    // return model.read(socket, this.rules);
   }
 
   /**
@@ -54,7 +55,11 @@ class Collection {
    * @param  {ObjectId|String} id     The document id to fetch
    * @return {Promise}                Promise resolved to masked Object
    */
-  document (socket, id) {
+  document (socket, id, isNew) {
+    if (isNew) {
+      return this.newDocument(socket);
+    }
+
     if (!id) {
       return Promise.reject('Missing argument id');
     }
@@ -80,36 +85,53 @@ class Collection {
    * @return {Promise}              The saved masked document
    */
   save (socket, id, data = {}) {
+    let Model = this.model;
+
     if (!id) {
       return Promise.reject('Missing argument id');
     }
 
-    return this.model
-      .findById(id)
+    return Model.findById(id)
       .exec()
       .then(doc => {
         if (!doc) {
-          return Promise.resolve(null);
+          doc = new Model(data);
+        } else {
+          doc.set(data);
         }
-        let model = new Document(doc.toObject());
-        return model.write(socket, this.rules, data);
+        return Promise.resolve(doc);
+      })
+      .then(doc => {
+        return doc.save();
+      })
+      .catch(errors => {
       });
   }
 
   validate (socket, id, data = {}) {
+    let Model = this.model;
+
     if (!id) {
       return Promise.reject('Missing argument id');
     }
 
-    return this.model
-      .findById(id)
+    return Model.findById(id)
       .exec()
       .then(doc => {
         if (!doc) {
-          return Promise.resolve(null);
+          doc = new Model(data);
+        } else {
+          doc.set(data);
         }
-        let model = new Document(doc.toObject());
-        return model.validate(socket, this.rules, data);
+        return Promise.resolve(doc);
+      })
+      .then(doc => {
+        return doc.validate();
+
+        // let model = new Document(doc.toObject());
+        // return model.validate(socket, this.rules, data);
+      })
+      .catch(errors => {
       });
   }
 
