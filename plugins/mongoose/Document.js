@@ -16,10 +16,11 @@ class Document {
   }
 
   read (socket, rules) {
-    return this.filterRoot(socket, rules)
-      .then(data => {
-        return this.filterPaths(socket, rules, data);
-      });
+    return Promise.resolve(this.data);
+    // return this.filterRoot(socket, rules)
+    //   .then(data => {
+    //     return this.filterPaths(socket, rules, data);
+    //   });
   }
 
   filterRoot (socket, rules) {
