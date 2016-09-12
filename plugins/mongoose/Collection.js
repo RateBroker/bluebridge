@@ -33,14 +33,13 @@ class Collection {
       });
   }
 
-
   /**
-   * newDocument - Fetches a new, masked & unsaved Model
+   * create - Fetches a new, masked & unsaved Model
    *
    * @param  {Socket} socket The client socket
    * @return {Promise}       Promise resolves to masked Model
    */
-  newDocument (socket) {
+  create (socket) {
     let Model = this.model;
     let doc = new Model({});
 
@@ -129,7 +128,7 @@ class Collection {
     let exposeObj = { };
     exposeObj[this.collectionName] = {
       'query':        this.curryFunction(this.query),
-      'newDocument':  this.curryFunction(this.newDocument),
+      'create':       this.curryFunction(this.create),
       'document':     this.curryFunction(this.document),
       'save':         this.curryFunction(this.save),
       'validate':     this.curryFunction(this.validate),
