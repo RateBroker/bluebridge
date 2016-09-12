@@ -43,9 +43,8 @@ class Collection {
   newDocument (socket) {
     let Model = this.model;
     let doc = new Model({});
-    return doc.toObject();
-    // let model = new Document(doc.toObject());
-    // return model.read(socket, this.rules);
+
+    return Promise.resolve(doc.toObject());
   }
 
   /**
@@ -55,11 +54,7 @@ class Collection {
    * @param  {ObjectId|String} id     The document id to fetch
    * @return {Promise}                Promise resolved to masked Object
    */
-  document (socket, id, isNew) {
-    if (isNew) {
-      return this.newDocument(socket);
-    }
-
+  document (socket, id) {
     if (!id) {
       return Promise.reject('Missing argument id');
     }
@@ -125,12 +120,7 @@ class Collection {
         }
         return Promise.resolve(doc);
       })
-      .then(doc => {
-        return doc.validate();
-
-        // let model = new Document(doc.toObject());
-        // return model.validate(socket, this.rules, data);
-      })
+      .then(doc => doc.validate())
       .catch(errors => {
       });
   }
