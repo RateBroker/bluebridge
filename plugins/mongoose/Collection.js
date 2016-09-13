@@ -36,7 +36,7 @@ class Collection {
           // remove empty values
           return Promise.resolve(docs.filter(function (n) { return n; }));
         });
-      })
+      });
   }
 
   /**

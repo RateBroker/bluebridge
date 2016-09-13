@@ -40,10 +40,9 @@ class Filter {
       maskPromises.push(p);
     }
 
-    return Promise.all(maskPromises)
-      .then(() => {
-        return Promise.resolve(dataOut);
-      });
+    return Promise.all(maskPromises).then(() => {
+      return Promise.resolve(dataOut);
+    });
   }
 
   testRule (socket, data, value, rule) {
