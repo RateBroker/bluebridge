@@ -8,11 +8,10 @@ class Collection {
   constructor (collectionName, collection) {
     this.collectionName = collectionName;
 
-
-    this.model = collection.model;
-    this.rules = collection.rules     || {};
-    this.methods = collection.methods || {};
-    this.statics = collection.statics || {};
+    this.model    = collection.model;
+    this.rules    = collection.rules   || {};
+    this.methods  = collection.methods || {};
+    this.statics  = collection.statics || {};
 
     this.filter = new Filter(this.rules);
   }
@@ -149,8 +148,45 @@ class Collection {
       'document':     this.curryFunction(this.document),
       'save':         this.curryFunction(this.save),
       'validate':     this.curryFunction(this.validate),
+      'statics':      this.exposeStatics(),
+      'methods':      this.exposeMethods()
     };
     return exposeObj;
+  }
+
+  exposeStatics () {
+    let exposeStaticsObj = {};
+    for (let methodName in this.statics) {
+      let staticFn = this.statics[methodName].bind(this.model);
+      exposeStaticsObj[methodName] = this.curryFunction(staticFn);
+    }
+    return exposeStaticsObj;
+  }
+
+  exposeMethods () {
+    let self = this;
+    let exposeMethodsObj = {};
+    for (let methodName in this.methods) {
+      let methodFn = this.methods[methodName];
+
+      let wrappedMethodFn = function (id, ...args) {
+        let socket = this;
+
+        return self.model
+          .findById(id)
+          .exec()
+          .then(doc => {
+            if (!doc) {
+              return Promise.reject('Document not fount with id: ' + id);
+            }
+            args.unshift(socket);
+            return methodFn.apply(doc, args);
+          });
+      };
+
+      exposeMethodsObj[methodName] = wrappedMethodFn;
+    }
+    return exposeMethodsObj;
   }
 
   curryFunction (fn) {
