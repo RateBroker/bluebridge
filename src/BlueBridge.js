@@ -45,18 +45,6 @@ class BlueBridge {
     this.rpc.expose(tree);
   }
 
-  handshake (socket, next) {
-    var handshakeData = socket.request;
-
-    console.log(handshakeData);
-
-    // if (!valid) {
-    //   next(new Error('not authorized'));
-    // } else {
-      next();
-    // }
-  }
-
   /**
    * listen - Registers BlueBridge events with the RPC server and begins listening
    *

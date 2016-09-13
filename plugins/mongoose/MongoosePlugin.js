@@ -52,12 +52,9 @@ class MongoosePlugin extends Plugin {
 
   expose () {
     let exposeObj = {};
-
     this.collections.forEach(collection => {
       Object.assign(exposeObj, collection.expose());
-    })
-
-    console.log(exposeObj);
+    });
     return exposeObj;
   }
 }

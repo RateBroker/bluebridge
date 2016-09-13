@@ -1,6 +1,6 @@
 'use strict';
 
-const Document   = require('./Document');
+const Filter   = require('./Filter');
 const curry = require('lodash.curry');
 
 class Collection {
@@ -8,10 +8,13 @@ class Collection {
   constructor (collectionName, collection) {
     this.collectionName = collectionName;
 
+
     this.model = collection.model;
     this.rules = collection.rules     || {};
     this.methods = collection.methods || {};
     this.statics = collection.statics || {};
+
+    this.filter = new Filter(this.rules);
   }
 
   /**
@@ -27,10 +30,13 @@ class Collection {
       .exec()
       .then(documents => {
         return Promise.all(documents.map(doc => {
-          let model = new Document(doc.toObject());
-          return model.read(socket, this.rules);
-        }));
-      });
+          return this.filter.mask(socket, doc.toObject(), '.read')
+        }))
+        .then(docs =>  {
+          // remove empty values
+          return Promise.resolve(docs.filter(function (n) { return n; }));
+        });
+      })
   }
 
   /**
@@ -42,8 +48,8 @@ class Collection {
   create (socket) {
     let Model = this.model;
     let doc = new Model({});
-
-    return Promise.resolve(doc.toObject());
+    let data = this.filter.mask(socket, doc.toObject(), '.read');
+    return Promise.resolve(data);
   }
 
   /**
@@ -58,15 +64,13 @@ class Collection {
       return Promise.reject('Missing argument id');
     }
 
-    return this.model
-      .findById(id)
+    return this.model.findById(id)
       .exec()
       .then(doc => {
         if (!doc) {
-          return Promise.resolve(null);
+          return Promise.reject('Document not found');
         }
-        let model = new Document(doc.toObject());
-        return model.read(socket, this.rules);
+        return this.filter.mask(socket, doc.toObject(), '.read');
       });
   }
 
@@ -85,20 +89,30 @@ class Collection {
       return Promise.reject('Missing argument id');
     }
 
-    return Model.findById(id)
-      .exec()
-      .then(doc => {
-        if (!doc) {
-          doc = new Model(data);
-        } else {
-          doc.set(data);
-        }
-        return Promise.resolve(doc);
+    return this.filter.mask(socket, data, '.write')
+      // Save data to object
+      .then(writeData => {
+        // Find document and set filtered writeData
+        return Model.findById(id)
+          .exec()
+          .then(doc => {
+            if (!doc) {
+              doc = new Model(writeData);
+            } else {
+              doc.set(writeData);
+            }
+            return Promise.resolve(doc);
+          })
+          .then(doc => {
+            return doc.save();
+          });
       })
+      // Mask outgoing data
       .then(doc => {
-        return doc.save();
+        return this.filter.mask(socket, doc.toObject(), '.read');
       })
       .catch(errors => {
+        console.error('Save validation errors! ', errors);
       });
   }
 
@@ -109,19 +123,22 @@ class Collection {
       return Promise.reject('Missing argument id');
     }
 
-    return Model.findById(id)
-      .exec()
-      .then(doc => {
-        if (!doc) {
-          doc = new Model(data);
-        } else {
-          doc.set(data);
-        }
-        return Promise.resolve(doc);
+    return this.filter.mask(socket, data, '.write')
+      .then(writeData => {
+        // Find document and set filtered writeData
+        return Model.findById(id)
+          .exec()
+          .then(doc => {
+            if (!doc) {
+              doc = new Model(writeData);
+            } else {
+              doc.set(writeData);
+            }
+            return Promise.resolve(doc);
+          })
       })
       .then(doc => doc.validate())
-      .catch(errors => {
-      });
+      .catch(errors => { });
   }
 
   expose () {
