@@ -1,6 +1,6 @@
 {
   "name": "bluebridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "BlueBridge provides a real-time RPC wrapper around Mongoose models",
   "main": "index.js",
   "directories": {
