@@ -16,14 +16,16 @@ class BlueBridge {
     this.sockets  = [];
 
     this.app    = express();
+    require('./middleware/express')(this.app);
+
     this.server = http.createServer(this.app);
+
     this.rpc    = new RPC(this.server, {
       serveClient: false,
       path: '/socket.io'
     });
     this.io = this.rpc.io;
-
-    this.io.use(this.handshake.bind(this));
+    require('./middleware/io')(this.io);
   }
 
   registerPlugin (plugin) {
