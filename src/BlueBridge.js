@@ -11,8 +11,7 @@ if (!PORT) {
 
 class BlueBridge {
 
-  constructor (firebase) {
-    this.firebase = firebase;
+  constructor () {
     this.plugins  = [];
     this.sockets  = [];
 
