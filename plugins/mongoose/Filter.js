@@ -26,7 +26,12 @@ class Filter {
       let rule    = rules[path];
       let obj     = this.deepValue(dataIn, path);
       // Test the rule, strip data if false
-      let p = this.testRule(socket, dataIn, obj, rule)
+      let p = this.testRule(rule,
+        {
+          socket: socket,
+          data: dataIn,
+          value: obj
+        })
         .then(pass => {
           if (pass) { return; }
 
@@ -45,17 +50,25 @@ class Filter {
     });
   }
 
-  testRule (socket, data, value, rule) {
+  testRule (rule, scope = {}) {
+    if (!rule) { return Promise.resolve(true); }
+
     let test;
     if (typeof rule === 'function') {
-      test = rule();
-      if (typeof test === 'Promise') {
-        return test;
+      try {
+        test = rule(scope);
+        if (typeof test === 'Promise') {
+          return test;
+        }
+      } catch (e) {
+        test = false;
       }
     }
     else if (typeof rule === 'string') {
       try {
-        test = eval(rule);
+        test = (function (scope) {
+          return eval(rule);
+        })(scope);
       } catch (e) {
         test = false;
       }
@@ -63,6 +76,7 @@ class Filter {
     else {
       test = rule;
     }
+
     return Promise.resolve(test);
   }
 
@@ -138,7 +152,7 @@ class Filter {
 
   /**
    *
-   * @param  {type} ruleType     '.read' or '.write'
+   * @param  {type} ruleType     '@read', '@write', '@methods', '@statics'
    * @return {Array}              Array of
    */
   getRulesOfType (ruleType) {
@@ -146,11 +160,15 @@ class Filter {
     for (let path in this.flattenedRules) {
       let rule = this.flattenedRules[path];
       if (path.endsWith(ruleType)) {
-        let pathNoRule = path.replace(new RegExp(ruleType + '$'), '');
+        let pathNoRule = path.replace(new RegExp('.' + ruleType + '$'), '');
         paths[pathNoRule] = rule;
       }
     }
     return paths;
+  }
+
+  getRule (fullPath) {
+    return this.flattenedRules[fullPath] || null;
   }
 }
 

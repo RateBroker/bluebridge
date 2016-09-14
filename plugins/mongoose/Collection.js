@@ -29,7 +29,7 @@ class Collection {
       .exec()
       .then(documents => {
         return Promise.all(documents.map(doc => {
-          return this.filter.mask(socket, doc.toObject(), '.read')
+          return this.filter.mask(socket, doc.toObject(), '@read')
         }))
         .then(docs =>  {
           // remove empty values
@@ -47,7 +47,7 @@ class Collection {
   create (socket) {
     let Model = this.model;
     let doc = new Model({});
-    let data = this.filter.mask(socket, doc.toObject(), '.read');
+    let data = this.filter.mask(socket, doc.toObject(), '@read');
     return Promise.resolve(data);
   }
 
@@ -69,7 +69,7 @@ class Collection {
         if (!doc) {
           return Promise.reject('Document not found');
         }
-        return this.filter.mask(socket, doc.toObject(), '.read');
+        return this.filter.mask(socket, doc.toObject(), '@read');
       });
   }
 
@@ -88,7 +88,7 @@ class Collection {
       return Promise.reject('Missing argument id');
     }
 
-    return this.filter.mask(socket, data, '.write')
+    return this.filter.mask(socket, data, '@write')
       // Save data to object
       .then(writeData => {
         // Find document and set filtered writeData
@@ -108,7 +108,7 @@ class Collection {
       })
       // Mask outgoing data
       .then(doc => {
-        return this.filter.mask(socket, doc.toObject(), '.read');
+        return this.filter.mask(socket, doc.toObject(), '@read');
       })
       .catch(errors => {
         console.error('Save validation errors! ', errors);
@@ -122,7 +122,7 @@ class Collection {
       return Promise.reject('Missing argument id');
     }
 
-    return this.filter.mask(socket, data, '.write')
+    return this.filter.mask(socket, data, '@write')
       .then(writeData => {
         // Find document and set filtered writeData
         return Model.findById(id)
@@ -155,10 +155,28 @@ class Collection {
   }
 
   exposeStatics () {
+    let self = this;
     let exposeStaticsObj = {};
     for (let methodName in this.statics) {
-      let staticFn = this.statics[methodName].bind(this.model);
-      exposeStaticsObj[methodName] = this.curryFunction(staticFn);
+      let staticFn = this.statics[methodName];
+      let rule = self.filter.getRule('$.@statics.' + methodName);
+
+      exposeStaticsObj[methodName] = function (...args) {
+        let socket = this;
+
+        return self.filter
+          .testRule(rule, {
+            socket: socket,
+            args: args
+          })
+          .then(pass => {
+            if (!pass) {
+              return Promise.reject('Rule check failed when calling static: ' + methodName);
+            }
+            args.unshift(socket);
+            return staticFn.apply(self.model, args);
+          });
+      }
     }
     return exposeStaticsObj;
   }
@@ -168,23 +186,30 @@ class Collection {
     let exposeMethodsObj = {};
     for (let methodName in this.methods) {
       let methodFn = this.methods[methodName];
+      let rule = self.filter.getRule('$.@methods.' + methodName);
 
-      let wrappedMethodFn = function (id, ...args) {
+      exposeMethodsObj[methodName] = function (id, ...args) {
         let socket = this;
 
-        return self.model
-          .findById(id)
-          .exec()
+        return self.filter
+          .testRule(rule, {
+            socket: socket,
+            args: args
+          })
+          .then(pass => {
+            if (!pass) {
+              return Promise.reject('Rule check failed when calling method: ' + methodName);
+            }
+            return self.model.findById(id).exec();
+          })
           .then(doc => {
             if (!doc) {
-              return Promise.reject('Document not fount with id: ' + id);
+              return Promise.reject('Document not found with id: ' + id);
             }
             args.unshift(socket);
             return methodFn.apply(doc, args);
           });
       };
-
-      exposeMethodsObj[methodName] = wrappedMethodFn;
     }
     return exposeMethodsObj;
   }
