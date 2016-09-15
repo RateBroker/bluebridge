@@ -12,8 +12,12 @@ class Collection {
     this.rules    = collection.rules   || {};
     this.methods  = collection.methods || {};
     this.statics  = collection.statics || {};
+    this.types    = collection.types   || {};
+    this.init();
+  }
 
-    this.filter = new Filter(this.rules);
+  init () {
+    this.filter   = new Filter(this.rules);
   }
 
   /**
@@ -47,8 +51,13 @@ class Collection {
   create (socket) {
     let Model = this.model;
     let doc = new Model({});
-    let data = this.filter.mask(socket, doc.toObject(), '@read');
-    return Promise.resolve(data);
+    return this.filter.mask(socket, doc.toObject(), '@read');
+
+
+    // return this.filter.mask(socket, doc.toObject(), '@default')
+    //   .then(defaults => {
+    //     defaults.isNew = true;
+    //   });
   }
 
   /**
@@ -81,16 +90,23 @@ class Collection {
    * @param  {type} data            The data to set
    * @return {Promise}              The saved masked document
    */
-  save (socket, id, data = {}) {
+  save (socket, id, dataIn = {}) {
     let Model = this.model;
 
     if (!id) {
       return Promise.reject('Missing argument id');
     }
 
-    return this.filter.mask(socket, data, '@write')
-      // Save data to object
+    return this.filter.mask(socket, dataIn, '@write')
+    // return this.filter.defaults(socket, {})
+    //   .then(defaultData => {
+    //
+    //       .then(writeData => {
+    //         return Object.assign({}, defaultData, writeData);
+    //       })
+    //   })
       .then(writeData => {
+
         // Find document and set filtered writeData
         return Model.findById(id)
           .exec()

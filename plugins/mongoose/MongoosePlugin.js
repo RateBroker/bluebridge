@@ -38,9 +38,12 @@ class MongoosePlugin extends Plugin {
    * @param  {type} collections description
    */
   loadCollections (collections) {
+    let arr = []
     for (let collectionName in collections) {
-      this.loadCollection(collectionName, collections[collectionName]);
+      let c = this.loadCollection(collectionName, collections[collectionName]);
+      arr.push(c);
     }
+    return arr;
   }
 
   loadCollection (collectionName, collection) {
@@ -48,6 +51,17 @@ class MongoosePlugin extends Plugin {
     collection = new Collection(collectionName, collection);
     // Then add it to the plugin
     this.collections.push(collection);
+
+    let subCollections = this.loadCollections(collection.types);
+
+    for (let subCollection of subCollections) {
+      subCollection.rules   = Object.assign({}, collection.rules,   subCollection.rules);
+      subCollection.methods = Object.assign({}, collection.methods, subCollection.methods);
+      subCollection.statics = Object.assign({}, collection.statics, subCollection.statics);
+      subCollection.init();
+    }
+
+    return collection;
   }
 
   expose () {

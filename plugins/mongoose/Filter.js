@@ -25,15 +25,20 @@ class Filter {
       //
       let rule    = rules[path];
       let obj     = this.deepValue(dataIn, path);
+      let currentScope = {
+        socket: socket,
+        firebaseUser: socket.firebaseUser || {},
+        data: dataIn,
+        value: obj
+      };
       // Test the rule, strip data if false
-      let p = this.testRule(rule,
-        {
-          socket: socket,
-          data: dataIn,
-          value: obj
-        })
-        .then(pass => {
-          if (pass) { return; }
+      let p = this.testRule(rule, currentScope)
+        .then(val => {
+          if (rule === '@default') {
+            this.setDeepValue(dataIn, path, val);
+            return;
+          }
+          if (val) { return; }
 
           if (path === '$') {
             dataOut = null;
@@ -53,31 +58,33 @@ class Filter {
   testRule (rule, scope = {}) {
     if (!rule) { return Promise.resolve(true); }
 
-    let test;
-    if (typeof rule === 'function') {
-      try {
-        test = rule(scope);
-        if (typeof test === 'Promise') {
-          return test;
-        }
-      } catch (e) {
-        test = false;
-      }
-    }
-    else if (typeof rule === 'string') {
-      try {
-        test = (function (scope) {
-          return eval(rule);
-        })(scope);
-      } catch (e) {
-        test = false;
-      }
-    }
-    else {
-      test = rule;
-    }
+    return (function (scope) {
 
-    return Promise.resolve(test);
+      let test;
+      if (typeof rule === 'function') {
+        try {
+          test = rule();
+          if (typeof test === 'Promise') {
+            return test;
+          }
+        } catch (e) {
+          test = false;
+        }
+      }
+      else if (typeof rule === 'string') {
+        try {
+          test = eval(rule);
+        } catch (e) {
+          test = false;
+        }
+      }
+      else {
+        test = rule;
+      }
+
+      return Promise.resolve(test);
+    })(scope);
+
   }
 
   deepValue (obj, path) {
@@ -91,9 +98,30 @@ class Filter {
     let len   = path.length;
 
     for (let i = 0; i < len ; i++) {
+      if (!obj) {
+        return null;
+      }
       obj = obj[path[i]];
     };
     return obj;
+  }
+
+  setDeepValue (obj, path, val) {
+    if (path === '$') {
+      throw new Error('Cannot set root value');
+    } else {
+      path = path.replace('$.', '');
+    }
+
+    path    = path.split('.');
+    let len = path.length;
+    let i;
+
+    for (i = 0; i < (len - 1); i++) {
+      obj = obj[path[i]];
+    };
+
+    obj[path[i]] = val;
   }
 
 
