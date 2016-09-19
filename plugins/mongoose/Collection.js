@@ -21,15 +21,15 @@ class Collection {
   }
 
   /**
-   * query - Queries mongo, returns an Array of masked Models
+   * find - Queries mongo, returns an Array of masked Models
    *
    * @param  {Socket} socket The client socket
-   * @param  {Object} qry    The query object
+   * @param  {Object} query    The query object
    * @return {Promise}       Promise resolves to an Array of Objects
    */
-  query (socket, qry) {
+  find (socket, query) {
     return this.model
-      .find(qry)
+      .find(query)
       .exec()
       .then(documents => {
         return Promise.all(documents.map(doc => {
@@ -67,12 +67,30 @@ class Collection {
    * @param  {ObjectId|String} id     The document id to fetch
    * @return {Promise}                Promise resolved to masked Object
    */
-  document (socket, id) {
+  findById (socket, id) {
     if (!id) {
       return Promise.reject('Missing argument id');
     }
 
     return this.model.findById(id)
+      .exec()
+      .then(doc => {
+        if (!doc) {
+          return Promise.reject('Document not found');
+        }
+        return this.filter.mask(socket, doc.toObject(), '@read');
+      });
+  }
+
+  /**
+   * document - Fetches a mongo document, returns a masked document
+   *
+   * @param  {Socket} socket          The client socket
+   * @param  {ObjectId|String} id     The document id to fetch
+   * @return {Promise}                Promise resolved to masked Object
+   */
+  findOne (socket, query) {
+    return this.model.findOne(query)
       .exec()
       .then(doc => {
         if (!doc) {
@@ -159,9 +177,10 @@ class Collection {
   expose () {
     let exposeObj = { };
     exposeObj[this.collectionName] = {
-      'query':        this.curryFunction(this.query),
       'create':       this.curryFunction(this.create),
-      'document':     this.curryFunction(this.document),
+      'find':         this.curryFunction(this.find),
+      'findOne':      this.curryFunction(this.findOne),
+      'findById':     this.curryFunction(this.findById),
       'save':         this.curryFunction(this.save),
       'validate':     this.curryFunction(this.validate),
       'statics':      this.exposeStatics(),
