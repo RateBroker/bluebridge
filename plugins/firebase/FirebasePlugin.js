@@ -33,11 +33,6 @@ class FirebasePlugin extends Plugin {
       .then(firebaseUser => {
         // set firebaseUser on the socket
         socket.firebaseUser = firebaseUser;
-            // fetch the bluebridge user with firebaseUser's unique id
-            // return this.bluebridge.user(firebaseUser.uid);
-          // })
-          // .then(user => {
-          //   socket.user = user;
         if (firebaseUser.uid) {
           socket.emit('auth');
         } else {
