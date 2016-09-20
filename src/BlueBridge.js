@@ -1,8 +1,9 @@
 'use strict';
 
-const RPC = require('socket.io-rpc');
-const express = require('express');
-const http = require('http');
+const RPC       = require('socket.io-rpc');
+const express   = require('express');
+const http      = require('http');
+const winston   = require('winston');
 
 const PORT = parseInt(process.env.BLUEBRIDGE_PORT, 10);
 if (!PORT) {
@@ -100,13 +101,11 @@ class BlueBridge {
    * @param  {Socket} socket The socket that connected
    */
   onConnect (socket) {
-    console.log('Socket Connected');
+    winston.info('Socket Connected');
     this.addSocket(socket);
-
     this.initSocket(socket);
-
     socket.once('disconnect', () => {
-      console.log('Socket Disconnected');
+      winston.info('Socket Disconnected');
       this.onDisconnect(socket);
     });
   }
