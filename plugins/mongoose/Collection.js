@@ -1,7 +1,8 @@
 'use strict';
 
-const Filter   = require('./Filter');
-const curry = require('lodash.curry');
+const Filter    = require('./Filter');
+const curry     = require('lodash.curry');
+const winston   = require('winston');
 
 class Collection {
 
@@ -39,7 +40,7 @@ class Collection {
           // remove empty values
           return Promise.resolve(docs.filter(function (n) { return n; }));
         });
-      });
+      }, winston.error);
   }
 
   /**
@@ -52,12 +53,6 @@ class Collection {
     let Model = this.model;
     let doc = new Model({});
     return this.filter.mask(socket, doc.toObject(), '@read');
-
-
-    // return this.filter.mask(socket, doc.toObject(), '@default')
-    //   .then(defaults => {
-    //     defaults.isNew = true;
-    //   });
   }
 
   /**
@@ -79,7 +74,7 @@ class Collection {
           return Promise.reject('Document not found');
         }
         return this.filter.mask(socket, doc.toObject(), '@read');
-      });
+      }, winston.error);
   }
 
   /**
@@ -97,7 +92,7 @@ class Collection {
           return Promise.reject('Document not found');
         }
         return this.filter.mask(socket, doc.toObject(), '@read');
-      });
+      }, winston.error);
   }
 
   /**
