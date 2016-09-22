@@ -1,12 +1,13 @@
 'use strict';
 
 const Plugin      = require('../../src/Plugin');
-const firebase = require('firebase')
 
 class FirebasePlugin extends Plugin {
 
-  constructor (bluebridge) {
+  constructor (bluebridge, firebase) {
     super(bluebridge);
+
+    this.firebase = firebase;
   }
 
   onConnection (socket) {
@@ -23,7 +24,7 @@ class FirebasePlugin extends Plugin {
       return Promise.resolve('No firebaseToken provided, deauthed');
     }
 
-    let auth = firebase.auth();
+    let auth = this.firebase.auth();
 
     //check the auth data sent by the client
     return auth.verifyIdToken(firebaseToken).then(firebaseUser => {
