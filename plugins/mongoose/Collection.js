@@ -104,43 +104,33 @@ class Collection {
    * @return {Promise}              The saved masked document
    */
   save (socket, id, dataIn = {}) {
-    let Model = this.model;
+    var _id = id || dataIn._id || null;
 
-    if (!id) {
+    if (!_id) {
       return Promise.reject('Missing argument id');
     }
 
     return this.filter.mask(socket, dataIn, '@write')
-    // return this.filter.defaults(socket, {})
-    //   .then(defaultData => {
-    //
-    //       .then(writeData => {
-    //         return Object.assign({}, defaultData, writeData);
-    //       })
-    //   })
-      .then(writeData => {
+      .then(writeData =>  this.findIdSetDataAndSave(_id, writeData))
+      .then(doc =>        this.filter.mask(socket, doc.toObject(), '@read'))
+      .catch(errors =>    console.error('Save validation errors! ', errors));
+  }
 
-        // Find document and set filtered writeData
-        return Model.findById(id)
-          .exec()
-          .then(doc => {
-            if (!doc) {
-              doc = new Model(writeData);
-            } else {
-              doc.set(writeData);
-            }
-            return Promise.resolve(doc);
-          })
-          .then(doc => {
-            return doc.save();
-          });
-      })
-      // Mask outgoing data
+  findIdSetDataAndSave (id, data) {
+    let Model = this.model;
+
+    return Model.findById(id)
+      .exec()
       .then(doc => {
-        return this.filter.mask(socket, doc.toObject(), '@read');
+        if (!doc) {
+          doc = new Model(data);
+        } else {
+          doc.set(data);
+        }
+        return Promise.resolve(doc);
       })
-      .catch(errors => {
-        console.error('Save validation errors! ', errors);
+      .then(doc => {
+        return doc.save();
       });
   }
 

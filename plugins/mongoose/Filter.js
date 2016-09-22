@@ -21,6 +21,7 @@ class Filter {
     let dataOut = Object.assign({}, dataIn);
 
     let maskPromises = [];
+
     for (let path in rules) {
       //
       let rule    = rules[path];
