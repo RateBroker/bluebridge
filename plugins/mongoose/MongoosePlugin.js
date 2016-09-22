@@ -1,5 +1,6 @@
 'use strict';
 
+const _           = require('lodash');
 const mongoose    = require('mongoose');
 const Collection  = require('./Collection');
 const Plugin      = require('../../src/Plugin');
@@ -40,6 +41,7 @@ class MongoosePlugin extends Plugin {
   loadCollections (collections) {
     let arr = []
     for (let collectionName in collections) {
+
       let c = this.loadCollection(collectionName, collections[collectionName]);
       arr.push(c);
     }
