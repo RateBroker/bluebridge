@@ -17,6 +17,12 @@ class Plugin {
     }
     return {};
   }
+
+  _IOmiddleware (io) {
+    if (typeof this.IOmiddleware === 'function') {
+      return this.IOmiddleware(io);
+    }
+  }
 }
 
 module.exports = Plugin;

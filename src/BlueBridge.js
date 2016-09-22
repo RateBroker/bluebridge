@@ -26,7 +26,6 @@ class BlueBridge {
       path: '/socket.io'
     });
     this.io = this.rpc.io;
-    require('./middleware/io')(this.io);
   }
 
   registerPlugin (plugin) {
@@ -56,9 +55,17 @@ class BlueBridge {
   listen (callback) {
     this.io.on('connection', this.onConnect.bind(this));
 
+    this.IOmiddleware();
     this.exposePlugins();
 
     this.server.listen(PORT, callback);
+  }
+
+  IOmiddleware () {
+    require('./middleware/io')(this.io);
+    for (let plugin of this.plugins) {
+      plugin._IOmiddleware(this.io);
+    }
   }
 
   destroy (callback) {
@@ -101,22 +108,12 @@ class BlueBridge {
    * @param  {Socket} socket The socket that connected
    */
   onConnect (socket) {
-    winston.info('Socket Connected');
+    // winston.info('Socket Connected');
     this.addSocket(socket);
-    this.initSocket(socket);
     socket.once('disconnect', () => {
-      winston.info('Socket Disconnected');
+      // winston.info('Socket Disconnected');
       this.onDisconnect(socket);
     });
-  }
-
-  /**
-   *
-   *
-   * @param {Socket} socket The socket to initialize
-   */
-  initSocket (socket) {
-
   }
 
   /**
