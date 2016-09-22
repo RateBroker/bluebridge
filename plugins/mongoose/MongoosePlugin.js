@@ -53,6 +53,13 @@ class MongoosePlugin extends Plugin {
     this.collections.push(collection);
 
     let subCollections = this.loadCollections(collection.types);
+    let merges = ['rules', 'methods', 'statics'];
+
+    for (let subCollection of subCollections) {
+      for (let mergeKey of merges) {
+        subCollection[mergeKey] = _.merge({}, collection[mergeKey], subCollection[mergeKey]);
+      }
+    }
 
     collection.subCollections = subCollections;
     return collection;
