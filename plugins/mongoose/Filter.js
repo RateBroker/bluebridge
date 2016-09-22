@@ -35,10 +35,6 @@ class Filter {
       // Test the rule, strip data if false
       let p = this.testRule(rule, currentScope)
         .then(val => {
-          if (rule === '@default') {
-            this.setDeepValue(dataIn, path, val);
-            return;
-          }
           if (val) { return; }
 
           if (path === '$') {
