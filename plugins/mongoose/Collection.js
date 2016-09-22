@@ -10,15 +10,46 @@ class Collection {
     this.collectionName = collectionName;
 
     this.model    = collection.model;
-    this.rules    = collection.rules   || {};
-    this.methods  = collection.methods || {};
-    this.statics  = collection.statics || {};
-    this.types    = collection.types   || {};
-    this.init();
+    this.rules    = collection.rules    || {};
+    this.methods  = collection.methods  || {};
+    this.statics  = collection.statics  || {};
+    this.types    = collection.types    || {};
+    this.defaults = collection.defaults || [];
+
+    this.subCollections = [];
   }
 
   init () {
-    this.filter   = new Filter(this.rules);
+    this.filter = new Filter(this.rules);
+    this.initDefaults();
+  }
+
+  initDefaults () {
+    if (this.defaults.length === 0) {
+      return;
+    }
+
+    return this.model.count({}).exec().then(count => {
+      winston.info(`[${this.collectionName}]: ${count} records exist`);
+
+      if (!count) {
+        winston.info(`[${this.collectionName}]: Seeding database with defaults`);
+
+        let defaultPromises = this.defaults.map(ob => {
+          let doc = new this.model(ob);
+          return doc.save().catch(err => winston.error(err));
+        });
+
+        return Promise.all(defaultPromises).then(saveResults => {
+          winston.info(`[${this.collectionName}]: created ${save.results.length} defaults`);
+        });
+      } else {
+        winston.info(`[${this.collectionName}]: Skipping default creation`);
+      }
+    })
+    .catch(err => {
+      throw new Error(err);
+    });
   }
 
   /**

@@ -54,19 +54,14 @@ class MongoosePlugin extends Plugin {
 
     let subCollections = this.loadCollections(collection.types);
 
-    for (let subCollection of subCollections) {
-      subCollection.rules   = Object.assign({}, collection.rules,   subCollection.rules);
-      subCollection.methods = Object.assign({}, collection.methods, subCollection.methods);
-      subCollection.statics = Object.assign({}, collection.statics, subCollection.statics);
-      subCollection.init();
-    }
-
+    collection.subCollections = subCollections;
     return collection;
   }
 
   expose () {
     let exposeObj = {};
     this.collections.forEach(collection => {
+      collection.init();
       Object.assign(exposeObj, collection.expose());
     });
     return exposeObj;
