@@ -49,9 +49,9 @@ class Collection {
    * @param  {Socket} socket The client socket
    * @return {Promise}       Promise resolves to masked Model
    */
-  create (socket) {
+  create (socket, data = {}) {
     let Model = this.model;
-    let doc = new Model({});
+    let doc = new Model(data);
     return this.filter.mask(socket, doc.toObject(), '@read');
   }
 
