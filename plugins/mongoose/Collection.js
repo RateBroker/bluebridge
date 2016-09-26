@@ -102,10 +102,11 @@ class Collection {
       .exec()
       .then(doc => {
         if (!doc) {
-          return Promise.reject('Document not found');
+          return Promise.resolve(null);
         }
         return this.filter.mask(socket, doc.toObject(), '@read');
-      }, winston.error);
+      })
+      .catch(winston.error);
   }
 
   /**
@@ -120,10 +121,11 @@ class Collection {
       .exec()
       .then(doc => {
         if (!doc) {
-          return Promise.reject('Document not found');
+          return Promise.resolve(null);
         }
         return this.filter.mask(socket, doc.toObject(), '@read');
-      }, winston.error);
+      })
+      .catch(winston.error);
   }
 
   /**
